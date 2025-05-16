@@ -1,0 +1,202 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>智能小车缺陷检测结果</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            margin: 20px;
+            background-color: #f5f5f5;
+        }
+        .container {
+            max-width: 1200px;
+            margin: 0 auto;
+            background-color: white;
+            padding: 20px;
+            border-radius: 8px;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+        }
+        h1 {
+            color: #333;
+            text-align: center;
+            margin-bottom: 30px;
+        }
+        .result-item {
+            border: 1px solid #ddd;
+            padding: 15px;
+            margin-bottom: 20px;
+            border-radius: 5px;
+            background-color: white;
+        }
+        .image-container {
+            display: flex;
+            margin-top: 15px;
+            flex-wrap: wrap;
+            gap: 20px;
+        }
+        .image-box {
+            flex: 1;
+            min-width: 300px;
+        }
+        .image-box img {
+            width: 100%;
+            height: auto;
+            border: 1px solid #eee;
+            border-radius: 4px;
+        }
+        .defect-info {
+            margin-top: 10px;
+            padding: 10px;
+            background-color: #f9f9f9;
+            border-radius: 4px;
+        }
+        .confidence {
+            font-weight: bold;
+            color: #e74c3c;
+        }
+        .timestamp {
+            color: #666;
+            font-size: 0.9em;
+        }
+        .no-results {
+            text-align: center;
+            padding: 40px;
+            color: #666;
+        }
+        #image-container {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 10px;
+            margin-bottom: 40px;
+        }
+        #image-container img {
+            border: 1px solid #ccc;
+            border-radius: 5px;
+            box-shadow: 2px 2px 5px rgba(0, 0, 0, 0.1);
+            width: 150px;
+            height: auto;
+        }
+    </style>
+</head>
+<body>
+
+<div class="container">
+    <h1>智能小车缺陷检测结果</h1>
+
+    <div id="image-container">
+        <!-- 图片将动态加载到这里 -->
+    </div>
+
+    <canvas id="defect-chart" width="600" height="300" style="margin: 0 auto 40px auto; display: block;"></canvas>
+
+    {% if results %}
+        {% for result in results %}
+        <div class="result-item">
+            <div class="timestamp">检测时间: {{ result.timestamp }}</div>
+            <div class="defect-info">
+                <strong>缺陷类型:</strong> {{ result.defect_type }} |
+                <strong>置信度:</strong> <span class="confidence">{{ "%.2f"|format(result.confidence*100) }}%</span>
+            </div>
+            <div class="image-container">
+                <div class="image-box">
+                    <h3>原始图像</h3>
+                    <img src="{{ result.image_url }}" alt="原始图像">
+                </div>
+                {% if result.result_image_url %}
+                <!-- <div class="image-box">
+                    <h3>检测结果</h3>
+                    <img src="{{ result.result_image_url }}" alt="检测结果">
+                </div> -->
+                {% endif %}
+            </div>
+        </div>
+        {% endfor %}
+    {% else %}
+        <div class="no-results">
+            <p>暂无检测结果</p>
+            <p>请确保智能小车已连接并上传数据</p>
+        </div>
+    {% endif %}
+</div>
+
+<!-- Chart.js CDN -->
+<script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+
+<script>
+    // 动态加载最新图片
+    async function loadImages() {
+        try {
+            const response = await fetch('/api/images');
+            const data = await response.json();
+            const imageContainer = document.getElementById('image-container');
+            imageContainer.innerHTML = '';
+
+            data.images.forEach(imageUrl => {
+                const imgElement = document.createElement('img');
+                imgElement.src = imageUrl;
+                imageContainer.appendChild(imgElement);
+            });
+        } catch (error) {
+            console.error('加载图片失败:', error);
+        }
+    }
+
+    // 加载并统计 defect_log.csv
+    async function fetchStatistics(chart) {
+        try {
+            const response = await fetch('/defect_log.csv');
+            const text = await response.text();
+            const lines = text.trim().split('\n');
+
+            let dentCount = 0;
+            let crackCount = 0;
+            lines.forEach(line => {
+                const parts = line.split(',');
+                const defectType = parts[1]?.trim();
+                if (defectType === 'dent') dentCount++;
+                if (defectType === 'crack') crackCount++;
+            });
+
+            chart.data.datasets[0].data = [dentCount, crackCount];
+            chart.update();
+        } catch (err) {
+            console.error("统计数据读取失败:", err);
+        }
+    }
+
+    // 页面加载后执行
+    window.onload = () => {
+        loadImages();
+        setInterval(loadImages, 1000); // 每5秒刷新图片
+
+        // 初始化 Chart.js
+        const ctx = document.getElementById('defect-chart').getContext('2d');
+        const defectChart = new Chart(ctx, {
+            type: 'bar',
+            data: {
+                labels: ['dent', 'crack'],
+                datasets: [{
+                    label: '缺陷数量',
+                    data: [0, 0],
+                    backgroundColor: ['#3498db', '#e74c3c']
+                }]
+            },
+            options: {
+                responsive: true,
+                scales: {
+                    y: {
+                        beginAtZero: true,
+                        stepSize: 1
+                    }
+                }
+            }
+        });
+
+        // 初次加载并每5秒更新统计图
+        fetchStatistics(defectChart);
+        setInterval(() => fetchStatistics(defectChart), 1000);
+    };
+</script>
+
+</body>
+</html>
