@@ -13,9 +13,9 @@ os.makedirs(UPLOAD_FOLDER, exist_ok=True)
 
 from flask import send_file
 
-@app.route("/defect_log.csv")
-def serve_csv():
-    return send_file("defect_log.csv", mimetype="text/csv")
+@app.route("/defect_log.txt")
+def serve_txt():
+    return send_file("defect_log.txt", mimetype="text/plain")
 
 @app.route('/')
 def index():
@@ -45,8 +45,8 @@ def upload_data():
         img.save(os.path.join(UPLOAD_FOLDER, filename))
 
         # 记录日志
-        log_entry = f"{datetime.now()}, {defect_type}, {confidence}%\n"
-        with open('defect_log.csv', 'a') as f:
+        log_entry = f"{datetime.now()} {defect_type} {confidence}\n"
+        with open('defect_log.txt', 'a') as f:
             f.write(log_entry)
 
         return jsonify({"status": "success", "message": "数据接收成功"})
@@ -71,12 +71,12 @@ def get_statistics():
     from collections import Counter
     try:
         counter = Counter()
-        if os.path.exists('defect_log.csv'):
-            with open('defect_log.csv', 'r') as f:
+        if os.path.exists('defect_log.txt'):
+            with open('defect_log.txt', 'r') as f:
                 for line in f:
-                    parts = line.strip().split(',')
+                    parts = line.strip().split()  # 使用空格分割
                     if len(parts) >= 2:
-                        defect_type = parts[1].strip()
+                        defect_type = parts[1]
                         counter[defect_type] += 1
         return jsonify(counter)
     except Exception as e:

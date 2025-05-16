@@ -141,21 +141,27 @@
         }
     }
 
-    // 加载并统计 defect_log.csv
+    // 加载并统计 defect_log.txt
     async function fetchStatistics(chart) {
         try {
-            const response = await fetch('/defect_log.csv');
+            const response = await fetch('/defect_log.txt');
+            console.log('响应状态:', response.status);
             const text = await response.text();
+            console.log('读取的文本:', text); // 看是否拿到日志内容
+            console.log('拆分后的行数:', text.trim().split('\n').length);
             const lines = text.trim().split('\n');
 
             let dentCount = 0;
             let crackCount = 0;
             lines.forEach(line => {
-                const parts = line.split(',');
-                const defectType = parts[1]?.trim();
+                const parts = line.trim().split(/\s+/);  // 使用正则按空白字符分割
+                console.log('解析结果:', parts);
+                const defectType = parts[2]?.toLowerCase();  // 增加容错和忽略大小写
                 if (defectType === 'dent') dentCount++;
                 if (defectType === 'crack') crackCount++;
             });
+
+            console.log('dent:', dentCount, 'crack:', crackCount);
 
             chart.data.datasets[0].data = [dentCount, crackCount];
             chart.update();
@@ -193,6 +199,7 @@
         });
 
         // 初次加载并每5秒更新统计图
+        console.log("开始加载统计数据...");
         fetchStatistics(defectChart);
         setInterval(() => fetchStatistics(defectChart), 1000);
     };
