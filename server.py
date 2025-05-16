@@ -28,7 +28,9 @@ def upload_data():
     """接收检测结果数据"""
     try:
         # 解析JSON数据
+
         data = request.form  # 获取表单字段
+        id=data.get('id')
         defect_type = data.get('type')
         confidence = data.get('confidence')
 
@@ -42,7 +44,14 @@ def upload_data():
         # 解码并保存图片
         img = Image.open(io.BytesIO(img_bytes))
         filename = f"{datetime.now().strftime('%Y%m%d%H%M%S')}_{defect_type}.jpg"
-        img.save(os.path.join(UPLOAD_FOLDER, filename))
+        if id==0:
+            img.save(os.path.join(UPLOAD_FOLDER+"/car0", filename))
+        if id==1:
+            img.save(os.path.join(UPLOAD_FOLDER+"/car1", filename))
+        if id==2:
+            img.save(os.path.join(UPLOAD_FOLDER+"/car2", filename))
+        if id==3:
+            img.save(os.path.join(UPLOAD_FOLDER+"/car3", filename))
 
         # 记录日志
         log_entry = f"{datetime.now()} {defect_type} {confidence}\n"
@@ -55,14 +64,41 @@ def upload_data():
         return jsonify({"status": "error", "message": str(e)}), 500
 # 坑洼缺陷
 
-@app.route('/api/images', methods=['GET'])
-def get_images():
+@app.route('/api/image0', methods=['GET'])
+def get_image0():
     """返回 uploads 文件夹中所有图片的路径"""
-    image_files = [f for f in os.listdir(UPLOAD_FOLDER) if f.endswith(('.jpg', '.jpeg', '.png'))]
+    image_files = [f for f in os.listdir('static/uploads/car0') if f.endswith(('.jpg', '.jpeg', '.png'))]
     image_file=image_files[-1]
     #image_urls = [f"/static/uploads/{f}" for f in image_files]  # 构造图片的URL
 
-    image_urls = [f"/static/uploads/{image_file}"]
+    image_urls = [f"/static/uploads/car0/{image_file}"]
+    return jsonify({"images": image_urls})
+@app.route('/api/image1', methods=['GET'])
+def get_image1():
+    """返回 uploads 文件夹中所有图片的路径"""
+    image_files = [f for f in os.listdir('static/uploads/car1') if f.endswith(('.jpg', '.jpeg', '.png'))]
+    image_file=image_files[-1]
+    #image_urls = [f"/static/uploads/{f}" for f in image_files]  # 构造图片的URL
+
+    image_urls = [f"/static/uploads/car1/{image_file}"]
+    return jsonify({"images": image_urls})
+@app.route('/api/image2', methods=['GET'])
+def get_image2():
+    """返回 uploads 文件夹中所有图片的路径"""
+    image_files = [f for f in os.listdir('static/uploads/car2') if f.endswith(('.jpg', '.jpeg', '.png'))]
+    image_file=image_files[-1]
+    #image_urls = [f"/static/uploads/{f}" for f in image_files]  # 构造图片的URL
+
+    image_urls = [f"/static/uploads/car2/{image_file}"]
+    return jsonify({"images": image_urls})
+@app.route('/api/image3', methods=['GET'])
+def get_image3():
+    """返回 uploads 文件夹中所有图片的路径"""
+    image_files = [f for f in os.listdir('static/uploads/car3') if f.endswith(('.jpg', '.jpeg', '.png'))]
+    image_file=image_files[-1]
+    #image_urls = [f"/static/uploads/{f}" for f in image_files]  # 构造图片的URL
+
+    image_urls = [f"/static/uploads/car3/{image_file}"]
     return jsonify({"images": image_urls})
 
 @app.route('/api/statistics', methods=['GET'])

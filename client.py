@@ -60,6 +60,7 @@ def main_loop():
             # 发送POST请求
             response = requests.post(
                 SERVER_URL,
+                id=0,
                 data=data,  # 额外字段使用 data 参数
                 files=files,  # 文件使用 files 参数
                 timeout=5
